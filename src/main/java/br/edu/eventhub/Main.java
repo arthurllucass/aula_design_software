@@ -7,7 +7,7 @@ import br.edu.eventhub.patterns.adapter.*;
 public class Main {
  public static void main(String[] args){
   EventHubService s=new EventHubService();
-  s.venues.save("V1",new Venue("V1","Centro de Convenções",1));
+  s.venues.save("V1",new Venue("V1","Centro de Convenções"));
   s.events.save("E1",new Event("E1","Tech Summit","V1",1));
   s.attendees.save("A1",new Attendee("A1","Pessoa 1","a1@exemplo.com"));
   s.attendees.save("A2",new Attendee("A2","Pessoa 2","a2@exemplo.com"));
