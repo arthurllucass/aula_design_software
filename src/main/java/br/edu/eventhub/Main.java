@@ -20,7 +20,7 @@ public class Main {
   s.checkIn(t1.id); // repeated check-in
   s.hireSupplier("E1","SOM");
 
-  EventHubFacade facade=new EventHubFacade(s,new PaymentAdapter(),new TicketingAdapter());
+  EventHubFacade facade=new EventHubFacade(s);
   facade.cancel("E1");
 
   System.out.println("INSCRITOS="+facade.getService().events.find("E1").attendeeIds.size());
