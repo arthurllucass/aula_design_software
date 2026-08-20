@@ -65,7 +65,13 @@ public class EventHubService {
  public void cancelEvent(String eventId){
   Event e=events.find(eventId); if(e==null)return;
   e.status="CANCELLED";
-  // no automatic refund or supplier cancellation
+
+  for(Ticket t:tickets.all()){
+   if(t.eventId.equals(eventId)&&!"REFUNDED".equals(t.status)){
+    payment.refund(t.attendeeId,t.price);
+    t.status="REFUNDED";
+   }
+  }
   publisher.publish(eventId,"EVENT_CANCELLED");
  }
 }
