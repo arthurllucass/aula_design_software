@@ -7,7 +7,6 @@ import br.edu.eventhub.patterns.adapter.*;
 import br.edu.eventhub.patterns.strategy.*;
 import br.edu.eventhub.patterns.observer.*;
 import br.edu.eventhub.patterns.factory.*;
-import java.util.*;
 
 public class EventHubService {
  public final InMemoryRepository<Event> events=new InMemoryRepository<>();
@@ -15,16 +14,17 @@ public class EventHubService {
  public final InMemoryRepository<Venue> venues=new InMemoryRepository<>();
  public final InMemoryRepository<Ticket> tickets=new InMemoryRepository<>();
 
- private final PaymentLegacyGateway payment=new PaymentLegacyGateway();
- private final TicketingAdapter ticketing=new TicketingAdapter();
- private final EmailLegacyApi email=new EmailLegacyApi();
- private final SupplierLegacyApi suppliers=new SupplierLegacyApi();
- private final PricingService pricing=new PricingService();
- private final EventPublisher publisher=new EventPublisher();
+ private final PaymentAdapter payment;
+ private final TicketingAdapter ticketing;
+ private final EmailLegacyApi email;
+ private final SupplierLegacyApi suppliers;
+ private final PricingService pricing;
+ private final EventPublisher publisher;
 
- public EventHubService(){
-  publisher.subscribe(new AttendeeObserver());
-  publisher.subscribe(new OrganizerObserver()); // replaces attendee
+ public EventHubService(PaymentAdapter payment,TicketingAdapter ticketing,EmailLegacyApi email,
+                        SupplierLegacyApi suppliers,PricingService pricing,EventPublisher publisher){
+  this.payment=payment; this.ticketing=ticketing; this.email=email;
+  this.suppliers=suppliers; this.pricing=pricing; this.publisher=publisher;
  }
 
  public Ticket register(String eventId,String attendeeId,String ticketType,double basePrice){
@@ -36,7 +36,7 @@ public class EventHubService {
   if(!e.hasSpace()) return null;
 
   double finalPrice=pricing.price(ticketType,basePrice);
-  String paymentResult=payment.charge(a.id,finalPrice);
+  boolean paid=payment.pay(a.id,finalPrice);
 
   e.addAttendee(attendeeId);
 
@@ -44,9 +44,9 @@ public class EventHubService {
   Ticket t=TicketFactory.create(ticketType,ticketId,eventId,attendeeId,finalPrice);
   tickets.save(ticketId,t);
 
-  // ticket issued even if payment fails
+  // o ingresso ainda sai mesmo se o pagamento for recusado (P10, fica pra proxima aula)
   String qrCode=ticketing.issueQr(ticketId);
-  email.send(a.email,"Ingresso "+ticketId+" QR="+qrCode+" pagamento="+paymentResult);
+  email.send(a.email,"Ingresso "+ticketId+" QR="+qrCode+" pagamento="+paid);
   publisher.publish(eventId,"REGISTRATION_CREATED");
   return t;
  }
