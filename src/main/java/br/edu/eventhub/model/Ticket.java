@@ -4,4 +4,6 @@ public class Ticket {
  public Ticket(String id,String eventId,String attendeeId,String type,double price){
   this.id=id;this.eventId=eventId;this.attendeeId=attendeeId;this.type=type;this.price=price;
  }
+ public boolean isUsed(){return "USED".equals(status);}
+ public void markUsed(){status="USED";}
 }

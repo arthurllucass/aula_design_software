@@ -31,11 +31,13 @@ public class EventHubService {
   Attendee a=attendees.find(attendeeId);
   if(e==null||a==null)return null;
 
-  // capacity is not enforced and duplicate registration is allowed
-  e.attendeeIds.add(attendeeId);
+  if(e.isRegistered(attendeeId)) return null;
+  if(!e.hasSpace()) return null;
 
   double finalPrice=pricing.price(ticketType,basePrice);
   String paymentResult=payment.charge(a.id,finalPrice);
+
+  e.addAttendee(attendeeId);
 
   String ticketId="T-"+eventId+"-"+attendeeId; // duplicate id can overwrite
   Ticket t=TicketFactory.create(ticketType,ticketId,eventId,attendeeId,finalPrice);
@@ -54,7 +56,8 @@ public class EventHubService {
 
  public void checkIn(String ticketId){
   Ticket t=tickets.find(ticketId); if(t==null)return;
-  t.status="USED"; // repeated check-in accepted
+  if(t.isUsed()) return;
+  t.markUsed();
   publisher.publish(t.eventId,"CHECKIN");
  }
 

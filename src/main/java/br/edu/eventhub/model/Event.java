@@ -6,4 +6,7 @@ public class Event {
  public Event(String id,String name,String venueId,int capacity){
   this.id=id;this.name=name;this.venueId=venueId;this.capacity=capacity;
  }
+ public boolean hasSpace(){return attendeeIds.size()<capacity;}
+ public boolean isRegistered(String attendeeId){return attendeeIds.contains(attendeeId);}
+ public void addAttendee(String attendeeId){attendeeIds.add(attendeeId);}
 }
