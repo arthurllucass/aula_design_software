@@ -12,12 +12,12 @@ public class Main {
   s.attendees.save("A1",new Attendee("A1","Pessoa 1","a1@exemplo.com"));
   s.attendees.save("A2",new Attendee("A2","Pessoa 2","a2@exemplo.com"));
 
-  s.register("E1","A1","STANDARD",100.0);
+  Ticket t1=s.register("E1","A1","STANDARD",100.0);
   s.register("E1","A2","STANDARD",100.0); // over capacity
   s.register("E1","A1","STANDARD",100.0); // duplicate registration
 
-  s.checkIn("T-E1-A1");
-  s.checkIn("T-E1-A1"); // repeated check-in
+  s.checkIn(t1.id);
+  s.checkIn(t1.id); // repeated check-in
   s.hireSupplier("E1","SOM");
 
   EventHubFacade facade=new EventHubFacade(s,new PaymentAdapter(),new TicketingAdapter());

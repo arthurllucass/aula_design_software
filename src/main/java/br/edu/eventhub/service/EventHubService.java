@@ -3,6 +3,7 @@ package br.edu.eventhub.service;
 import br.edu.eventhub.model.*;
 import br.edu.eventhub.repository.*;
 import br.edu.eventhub.legacy.*;
+import br.edu.eventhub.patterns.adapter.*;
 import br.edu.eventhub.patterns.strategy.*;
 import br.edu.eventhub.patterns.observer.*;
 import br.edu.eventhub.patterns.factory.*;
@@ -15,7 +16,7 @@ public class EventHubService {
  public final InMemoryRepository<Ticket> tickets=new InMemoryRepository<>();
 
  private final PaymentLegacyGateway payment=new PaymentLegacyGateway();
- private final QrCodeLegacyApi qr=new QrCodeLegacyApi();
+ private final TicketingAdapter ticketing=new TicketingAdapter();
  private final EmailLegacyApi email=new EmailLegacyApi();
  private final SupplierLegacyApi suppliers=new SupplierLegacyApi();
  private final PricingService pricing=new PricingService();
@@ -39,12 +40,12 @@ public class EventHubService {
 
   e.addAttendee(attendeeId);
 
-  String ticketId="T-"+eventId+"-"+attendeeId; // duplicate id can overwrite
+  String ticketId=Ticket.buildId(eventId,attendeeId);
   Ticket t=TicketFactory.create(ticketType,ticketId,eventId,attendeeId,finalPrice);
   tickets.save(ticketId,t);
 
   // ticket issued even if payment fails
-  String qrCode=qr.generate(ticketId);
+  String qrCode=ticketing.issueQr(ticketId);
   email.send(a.email,"Ingresso "+ticketId+" QR="+qrCode+" pagamento="+paymentResult);
   publisher.publish(eventId,"REGISTRATION_CREATED");
   return t;
