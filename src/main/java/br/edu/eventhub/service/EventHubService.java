@@ -8,6 +8,8 @@ import br.edu.eventhub.model.Attendee;
 import br.edu.eventhub.model.Event;
 import br.edu.eventhub.model.Ticket;
 import br.edu.eventhub.model.Venue;
+import br.edu.eventhub.model.enums.StatusEvent;
+import br.edu.eventhub.model.enums.StatusTicket;
 import br.edu.eventhub.patterns.factory.TicketFactory;
 import br.edu.eventhub.patterns.observer.AttendeeObserver;
 import br.edu.eventhub.patterns.observer.EventPublisher;
@@ -78,12 +80,11 @@ public class EventHubService {
         if (e == null) {
             return;
         }
-        e.status = "CANCELLED";
+        e.status = StatusEvent.CANCELLED;
         // no automatic refund or supplier cancellation
         notify(eventId, "EVENT_CANCELLED");
     }
 
-    // capacity is not enforced and duplicate registration is allowed
     private void addAttendee(Event e, String attendeeId) {
         e.attendeeIds.add(attendeeId);
     }
@@ -96,12 +97,10 @@ public class EventHubService {
         return payment.charge(a.id, price);
     }
 
-    // duplicate id can overwrite
     private String buildTicketId(String eventId, String attendeeId) {
         return "T-" + eventId + "-" + attendeeId;
     }
 
-    // ticket issued even if payment fails
     private Ticket createTicket(String eventId, String attendeeId, String ticketType, double price) {
         String ticketId = buildTicketId(eventId, attendeeId);
         Ticket ticket = TicketFactory.create(ticketType, ticketId, eventId, attendeeId, price);
@@ -114,9 +113,8 @@ public class EventHubService {
         email.send(a.email, "Ingresso " + ticket.id + " QR=" + qrCode + " pagamento=" + paymentResult);
     }
 
-    // repeated check-in accepted
     private void markAsUsed(Ticket ticket) {
-        ticket.status = "USED";
+        ticket.status = StatusTicket.USED;
     }
 
     private void notify(String eventId, String event) {
