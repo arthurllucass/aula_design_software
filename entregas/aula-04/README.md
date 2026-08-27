@@ -62,7 +62,8 @@ E no `Main`, que virou o lugar onde tudo é montado:
 ```java
 EventHubService s = new EventHubService(new PaymentLegacyGateway(), new QrCodeLegacyApi(),
     new EmailLegacyApi(), new SupplierLegacyApi(), new PricingService(), new EventPublisher());
-```docs/adr/ADR-0001-arquitetura.md
+```
+docs/adr/ADR-0001-arquitetura.md
 
 ### Alternativas
 - **Criar interfaces para cada dependência** — melhor no longo prazo, mas exigiria mexer nas classes

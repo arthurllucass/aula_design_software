@@ -13,9 +13,11 @@ public class Main {
     EventHubService s = new EventHubService(new PaymentLegacyGateway(), new QrCodeLegacyApi(),
         new EmailLegacyApi(), new SupplierLegacyApi(), new PricingService(), new EventPublisher());
     s.venues.save("V1", new Venue("V1", "Centro de Convenções", 1));
-    s.events.save("E1", new Event("E1", "Tech Summit", "V1", 1));
+    s.events.save("E1", new Event("E1", "Tech Summit", "V1", 10));
     s.attendees.save("A1", new Attendee("A1", "Pessoa 1", "a1@exemplo.com"));
     s.attendees.save("A2", new Attendee("A2", "Pessoa 2", "a2@exemplo.com"));
+
+    System.out.println("CAPACIDADE=" + s.events.find("E1").capacity);
 
     s.register("E1", "A1", "STANDARD", 100.0);
     s.register("E1", "A2", "STANDARD", 100.0); // over capacity
