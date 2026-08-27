@@ -48,6 +48,10 @@ public class EventHubService {
             return null;
         }
 
+        if(e.hasAttendee(attendeeId)){
+            return null;
+        }
+
         addAttendee(e, attendeeId);
 
         double finalPrice = calculatePrice(ticketType, basePrice);
@@ -67,6 +71,9 @@ public class EventHubService {
     public void checkIn(String ticketId) {
         Ticket t = tickets.find(ticketId);
         if (t == null) {
+            return;
+        }
+        if(t.inUsed()){
             return;
         }
         markAsUsed(t);

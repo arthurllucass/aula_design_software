@@ -1,0 +1,129 @@
+[1mdiff --git a/src/main/java/br/edu/eventhub/model/Attendee.java b/src/main/java/br/edu/eventhub/model/Attendee.java[m
+[1mindex f47a55d..67c67b7 100644[m
+[1m--- a/src/main/java/br/edu/eventhub/model/Attendee.java[m
+[1m+++ b/src/main/java/br/edu/eventhub/model/Attendee.java[m
+[36m@@ -1,5 +1,13 @@[m
+ package br.edu.eventhub.model;[m
+[32m+[m
+ public class Attendee {[m
+[31m- public String id; public String name; public String email;[m
+[31m- public Attendee(String id,String name,String email){this.id=id;this.name=name;this.email=email;}[m
+[32m+[m[32m    public String id;[m
+[32m+[m[32m    public String name;[m
+[32m+[m[32m    public String email;[m
+[32m+[m
+[32m+[m[32m    public Attendee(String id, String name, String email) {[m
+[32m+[m[32m        this.id = id;[m
+[32m+[m[32m        this.name = name;[m
+[32m+[m[32m        this.email = email;[m
+[32m+[m[32m    }[m
+ }[m
+[1mdiff --git a/src/main/java/br/edu/eventhub/model/Event.java b/src/main/java/br/edu/eventhub/model/Event.java[m
+[1mindex 3cd7973..aecaec7 100644[m
+[1m--- a/src/main/java/br/edu/eventhub/model/Event.java[m
+[1m+++ b/src/main/java/br/edu/eventhub/model/Event.java[m
+[36m@@ -1,9 +1,23 @@[m
+ package br.edu.eventhub.model;[m
+[32m+[m
+ import java.util.*;[m
+[32m+[m
+ public class Event {[m
+[31m- public String id; public String name; public String venueId; public String status="PLANNED";[m
+[31m- public int capacity; public List<String> attendeeIds=new ArrayList<>();[m
+[31m- public Event(String id,String name,String venueId,int capacity){[m
+[31m-  this.id=id;this.name=name;this.venueId=venueId;this.capacity=capacity;[m
+[31m- }[m
+[32m+[m[32m    public String id;[m
+[32m+[m[32m    public String name;[m
+[32m+[m[32m    public String venueId;[m
+[32m+[m[32m    public String status = "PLANNED";[m
+[32m+[m[32m    public int capacity;[m
+[32m+[m[32m    public List<String> attendeeIds = new ArrayList<>();[m
+[32m+[m
+[32m+[m[32m    public Event(String id, String name, String venueId, int capacity) {[m
+[32m+[m[32m        this.id = id;[m
+[32m+[m[32m        this.name = name;[m
+[32m+[m[32m        this.venueId = venueId;[m
+[32m+[m[32m        this.capacity = capacity;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public boolean hasAttendee(String attendeeId){[m
+[32m+[m[32m        return attendeeIds.contains(attendeeId);[m
+[32m+[m[32m    }[m
+ }[m
+[1mdiff --git a/src/main/java/br/edu/eventhub/model/Ticket.java b/src/main/java/br/edu/eventhub/model/Ticket.java[m
+[1mindex 55384d5..4082bce 100644[m
+[1m--- a/src/main/java/br/edu/eventhub/model/Ticket.java[m
+[1m+++ b/src/main/java/br/edu/eventhub/model/Ticket.java[m
+[36m@@ -1,7 +1,22 @@[m
+ package br.edu.eventhub.model;[m
+[32m+[m
+ public class Ticket {[m
+[31m- public String id; public String eventId; public String attendeeId; public String type; public double price; public String status="ISSUED";[m
+[31m- public Ticket(String id,String eventId,String attendeeId,String type,double price){[m
+[31m-  this.id=id;this.eventId=eventId;this.attendeeId=attendeeId;this.type=type;this.price=price;[m
+[31m- }[m
+[32m+[m[32m    public String id;[m
+[32m+[m[32m    public String eventId;[m
+[32m+[m[32m    public String attendeeId;[m
+[32m+[m[32m    public String type;[m
+[32m+[m[32m    public double price;[m
+[32m+[m[32m    public String status = "ISSUED";[m
+[32m+[m
+[32m+[m[32m    public Ticket(String id, String eventId, String attendeeId, String type, double price) {[m
+[32m+[m[32m        this.id = id;[m
+[32m+[m[32m        this.eventId = eventId;[m
+[32m+[m[32m        this.attendeeId = attendeeId;[m
+[32m+[m[32m        this.type = type;[m
+[32m+[m[32m        this.price = price;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public boolean inUsed(){[m
+[32m+[m[32m        return status.equals("USED");[m
+[32m+[m[32m    }[m
+ }[m
+[1mdiff --git a/src/main/java/br/edu/eventhub/model/Venue.java b/src/main/java/br/edu/eventhub/model/Venue.java[m
+[1mindex 0886486..a70ba3a 100644[m
+[1m--- a/src/main/java/br/edu/eventhub/model/Venue.java[m
+[1m+++ b/src/main/java/br/edu/eventhub/model/Venue.java[m
+[36m@@ -1,5 +1,13 @@[m
+ package br.edu.eventhub.model;[m
+[32m+[m
+ public class Venue {[m
+[31m- public String id; public String name; public int capacity;[m
+[31m- public Venue(String id,String name,int capacity){this.id=id;this.name=name;this.capacity=capacity;}[m
+[32m+[m[32m    public String id;[m
+[32m+[m[32m    public String name;[m
+[32m+[m[32m    public int capacity;[m
+[32m+[m
+[32m+[m[32m    public Venue(String id, String name, int capacity) {[m
+[32m+[m[32m        this.id = id;[m
+[32m+[m[32m        this.name = name;[m
+[32m+[m[32m        this.capacity = capacity;[m
+[32m+[m[32m    }[m
+ }[m
+[1mdiff --git a/src/main/java/br/edu/eventhub/service/EventHubService.java b/src/main/java/br/edu/eventhub/service/EventHubService.java[m
+[1mindex 840156a..ae2964a 100644[m
+[1m--- a/src/main/java/br/edu/eventhub/service/EventHubService.java[m
+[1m+++ b/src/main/java/br/edu/eventhub/service/EventHubService.java[m
+[36m@@ -48,6 +48,10 @@[m [mpublic class EventHubService {[m
+             return null;[m
+         }[m
+ [m
+[32m+[m[32m        if(e.hasAttendee(attendeeId)){[m
+[32m+[m[32m            return null;[m
+[32m+[m[32m        }[m
+[32m+[m
+         addAttendee(e, attendeeId);[m
+ [m
+         double finalPrice = calculatePrice(ticketType, basePrice);[m
+[36m@@ -69,6 +73,9 @@[m [mpublic class EventHubService {[m
+         if (t == null) {[m
+             return;[m
+         }[m
+[32m+[m[32m        if(t.inUsed()){[m
+[32m+[m[32m            return;[m
+[32m+[m[32m        }[m
+         markAsUsed(t);[m
+         notify(t.eventId, "CHECKIN");[m
+     }[m
