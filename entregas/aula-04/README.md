@@ -30,7 +30,7 @@ private final EventPublisher publisher = new EventPublisher();
 
 public EventHubService() {
     publisher.subscribe(new AttendeeObserver());
-    publisher.subscribe(new OrganizerObserver()); // replaces attendee
+    publisher.subscribe(new OrganizerObserver());
 }
 ```
 
@@ -62,7 +62,7 @@ E no `Main`, que virou o lugar onde tudo é montado:
 ```java
 EventHubService s = new EventHubService(new PaymentLegacyGateway(), new QrCodeLegacyApi(),
     new EmailLegacyApi(), new SupplierLegacyApi(), new PricingService(), new EventPublisher());
-```docs/adr/ADR-0001-arquitetura.md
+```
 
 ### Alternativas
 - **Criar interfaces para cada dependência** — melhor no longo prazo, mas exigiria mexer nas classes
@@ -154,15 +154,113 @@ private void notify(String eventId, String event) { ... }
 
 ---
 
+## P03 — Status recebendo string
+
+### Decisão
+O status do evento e do ingresso deixam de ser `String` e passam a ser dois enums, `StatusEvent` e
+`StatusTicket`.
+
+### Motivo
+Os status eram texto solto espalhado pelo código: `"PLANNED"`, `"CANCELLED"`, `"ISSUED"`, `"USED"`.
+Qualquer valor era aceito: escrever `"USADO"` ou `"used"` compilava normal e só quebrava rodando.
+
+### Antes
+No `Event` e no `Ticket` o campo era `String`, com o valor inicial escrito na mão:
+
+```java
+public String status = "PLANNED";
+public String status = "ISSUED";
+```
+
+E no `EventHubService` a troca de estado era atribuição de texto:
+
+```java
+e.status = "CANCELLED";
+ticket.status = "USED";
+```
+
+### Depois
+Os dois enums novos, em `model/enums/`:
+
+```java
+public enum StatusEvent {
+
+    PLANNED ("planned"),
+    CANCELLED ("cancelled");
+
+    private String description;
+
+    StatusEvent(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+}
+```
+
+```java
+public enum StatusTicket {
+
+    ISSUED ("issued"),
+    USED ("used");
+
+    private String description;
+
+    StatusTicket(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+}
+```
+
+Nos models mudou só o tipo do campo:
+
+```java
+public StatusEvent status = StatusEvent.PLANNED;
+public StatusTicket status = StatusTicket.ISSUED;
+```
+
+E no `EventHubService` mudaram duas linhas, uma no `cancelEvent()` e outra no `markAsUsed()`:
+
+```java
+e.status = StatusEvent.CANCELLED;
+ticket.status = StatusTicket.USED;
+```
+
+### Alternativas
+- **Deixar as strings e criar constantes `public static final String`**: evita o erro de digitação, mas o
+  campo continua sendo `String` e continua aceitando qualquer texto.
+
+### Consequências
+- Quem quiser saber quais status existem olha o enum, e não o código espalhado.
+
+---
+
 ## Evidências
 
 - **Repositório:** https://github.com/arthurllucass/aula_design_software
-- **Branch:** `aula-04`
+- **Branch:** `aula-04` (P01 e P02) e `arthur-lucas` (formatação, P03 e pacote de test)
 - **Commits:**
   - `aula-04: P01 dependencias do EventHubService recebidas no construtor e injetadas no Main`
   - `aula-04: P02 register dividido em metodos menores por responsabilidade`
   - `aula-04: ignora a pasta .idea e os arquivos de compilacao`
-- **Arquivos:** `src/main/java/br/edu/eventhub/service/EventHubService.java` e `Main.java`
+  - `aula-04: documenta as duas decisoes no formato do ADR`
+  - `arthur-lucas: formatacao do codigo para melhorar a leitura`
+  - `arthur-lucas: cria os enums de status e usa no Event, no Ticket e no service`
+  - `arthur-lucas: cria o pacote de test com uma copia das classes`
+- **Arquivos:**
+  - `src/main/java/br/edu/eventhub/service/EventHubService.java`
+  - `src/main/java/br/edu/eventhub/Main.java`
+  - `src/main/java/br/edu/eventhub/model/Event.java`
+  - `src/main/java/br/edu/eventhub/model/Ticket.java`
+  - `src/main/java/br/edu/eventhub/model/enums/StatusEvent.java`
+  - `src/main/java/br/edu/eventhub/model/enums/StatusTicket.java`
+  - `src/test/java/br/edu/eventhub/`
 
 ### Compilação
 
@@ -188,3 +286,16 @@ ORGANIZER E1 EVENT_CANCELLED
 INSCRITOS=3
 STATUS=CANCELLED
 ```
+
+---
+
+## Teste
+
+```bash
+mvn test
+```
+
+O Maven compila o `src/main/java` e o `src/test/java` e termina em `BUILD SUCCESS`:
+
+![Saída do mvn test com BUILD SUCCESS](mvn-test.png)
+
