@@ -48,21 +48,16 @@ public class EventHubService {
             return null;
         }
 
-        // capacity is not enforced and duplicate registration is allowed
-        e.attendeeIds.add(attendeeId);
+        addAttendee(e, attendeeId);
 
-        double finalPrice = pricing.price(ticketType, basePrice);
-        String paymentResult = payment.charge(a.id, finalPrice);
+        double finalPrice = calculatePrice(ticketType, basePrice);
+        String paymentResult = charge(a, finalPrice);
 
-        String ticketId = "T-" + eventId + "-" + attendeeId; // duplicate id can overwrite
-        Ticket t = TicketFactory.create(ticketType, ticketId, eventId, attendeeId, finalPrice);
-        tickets.save(ticketId, t);
+        Ticket ticket = createTicket(eventId, attendeeId, ticketType, finalPrice);
+        sendTicketEmail(a, ticket, paymentResult);
 
-        // ticket issued even if payment fails
-        String qrCode = qr.generate(ticketId);
-        email.send(a.email, "Ingresso " + ticketId + " QR=" + qrCode + " pagamento=" + paymentResult);
-        publisher.publish(eventId, "REGISTRATION_CREATED");
-        return t;
+        notify(eventId, "REGISTRATION_CREATED");
+        return ticket;
     }
 
     public void hireSupplier(String eventId, String service) {
@@ -74,8 +69,8 @@ public class EventHubService {
         if (t == null) {
             return;
         }
-        t.status = "USED"; // repeated check-in accepted
-        publisher.publish(t.eventId, "CHECKIN");
+        markAsUsed(t);
+        notify(t.eventId, "CHECKIN");
     }
 
     public void cancelEvent(String eventId) {
@@ -85,6 +80,46 @@ public class EventHubService {
         }
         e.status = "CANCELLED";
         // no automatic refund or supplier cancellation
-        publisher.publish(eventId, "EVENT_CANCELLED");
+        notify(eventId, "EVENT_CANCELLED");
+    }
+
+    // capacity is not enforced and duplicate registration is allowed
+    private void addAttendee(Event e, String attendeeId) {
+        e.attendeeIds.add(attendeeId);
+    }
+
+    private double calculatePrice(String ticketType, double basePrice) {
+        return pricing.price(ticketType, basePrice);
+    }
+
+    private String charge(Attendee a, double price) {
+        return payment.charge(a.id, price);
+    }
+
+    // duplicate id can overwrite
+    private String buildTicketId(String eventId, String attendeeId) {
+        return "T-" + eventId + "-" + attendeeId;
+    }
+
+    // ticket issued even if payment fails
+    private Ticket createTicket(String eventId, String attendeeId, String ticketType, double price) {
+        String ticketId = buildTicketId(eventId, attendeeId);
+        Ticket ticket = TicketFactory.create(ticketType, ticketId, eventId, attendeeId, price);
+        tickets.save(ticketId, ticket);
+        return ticket;
+    }
+
+    private void sendTicketEmail(Attendee a, Ticket ticket, String paymentResult) {
+        String qrCode = qr.generate(ticket.id);
+        email.send(a.email, "Ingresso " + ticket.id + " QR=" + qrCode + " pagamento=" + paymentResult);
+    }
+
+    // repeated check-in accepted
+    private void markAsUsed(Ticket ticket) {
+        ticket.status = "USED";
+    }
+
+    private void notify(String eventId, String event) {
+        publisher.publish(eventId, event);
     }
 }
