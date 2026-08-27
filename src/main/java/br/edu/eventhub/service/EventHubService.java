@@ -29,7 +29,8 @@ public class EventHubService {
     private final PricingService pricing;
     private final EventPublisher publisher;
 
-    public EventHubService(PaymentLegacyGateway payment, QrCodeLegacyApi qr, EmailLegacyApi email, SupplierLegacyApi suppliers, PricingService pricing, EventPublisher publisher) {
+    public EventHubService(PaymentLegacyGateway payment, QrCodeLegacyApi qr, EmailLegacyApi email,
+            SupplierLegacyApi suppliers, PricingService pricing, EventPublisher publisher) {
         this.payment = payment;
         this.qr = qr;
         this.email = email;
