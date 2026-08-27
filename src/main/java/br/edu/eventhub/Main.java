@@ -3,10 +3,14 @@ import br.edu.eventhub.model.*;
 import br.edu.eventhub.service.*;
 import br.edu.eventhub.patterns.facade.*;
 import br.edu.eventhub.patterns.adapter.*;
+import br.edu.eventhub.legacy.*;
+import br.edu.eventhub.patterns.observer.*;
+import br.edu.eventhub.patterns.strategy.*;
 
 public class Main {
  public static void main(String[] args){
-  EventHubService s=new EventHubService();
+  EventHubService s=new EventHubService(new PaymentLegacyGateway(),new QrCodeLegacyApi(),
+    new EmailLegacyApi(),new SupplierLegacyApi(),new PricingService(),new EventPublisher());
   s.venues.save("V1",new Venue("V1","Centro de Convenções",1));
   s.events.save("E1",new Event("E1","Tech Summit","V1",1));
   s.attendees.save("A1",new Attendee("A1","Pessoa 1","a1@exemplo.com"));

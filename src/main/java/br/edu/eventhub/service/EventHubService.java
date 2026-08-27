@@ -1,67 +1,90 @@
 package br.edu.eventhub.service;
 
-import br.edu.eventhub.model.*;
-import br.edu.eventhub.repository.*;
-import br.edu.eventhub.legacy.*;
-import br.edu.eventhub.patterns.strategy.*;
-import br.edu.eventhub.patterns.observer.*;
-import br.edu.eventhub.patterns.factory.*;
-import java.util.*;
+import br.edu.eventhub.legacy.EmailLegacyApi;
+import br.edu.eventhub.legacy.PaymentLegacyGateway;
+import br.edu.eventhub.legacy.QrCodeLegacyApi;
+import br.edu.eventhub.legacy.SupplierLegacyApi;
+import br.edu.eventhub.model.Attendee;
+import br.edu.eventhub.model.Event;
+import br.edu.eventhub.model.Ticket;
+import br.edu.eventhub.model.Venue;
+import br.edu.eventhub.patterns.factory.TicketFactory;
+import br.edu.eventhub.patterns.observer.AttendeeObserver;
+import br.edu.eventhub.patterns.observer.EventPublisher;
+import br.edu.eventhub.patterns.observer.OrganizerObserver;
+import br.edu.eventhub.patterns.strategy.PricingService;
+import br.edu.eventhub.repository.InMemoryRepository;
 
 public class EventHubService {
- public final InMemoryRepository<Event> events=new InMemoryRepository<>();
- public final InMemoryRepository<Attendee> attendees=new InMemoryRepository<>();
- public final InMemoryRepository<Venue> venues=new InMemoryRepository<>();
- public final InMemoryRepository<Ticket> tickets=new InMemoryRepository<>();
 
- private final PaymentLegacyGateway payment=new PaymentLegacyGateway();
- private final QrCodeLegacyApi qr=new QrCodeLegacyApi();
- private final EmailLegacyApi email=new EmailLegacyApi();
- private final SupplierLegacyApi suppliers=new SupplierLegacyApi();
- private final PricingService pricing=new PricingService();
- private final EventPublisher publisher=new EventPublisher();
+    public final InMemoryRepository<Event> events = new InMemoryRepository<>();
+    public final InMemoryRepository<Attendee> attendees = new InMemoryRepository<>();
+    public final InMemoryRepository<Venue> venues = new InMemoryRepository<>();
+    public final InMemoryRepository<Ticket> tickets = new InMemoryRepository<>();
 
- public EventHubService(){
-  publisher.subscribe(new AttendeeObserver());
-  publisher.subscribe(new OrganizerObserver()); // replaces attendee
- }
+    private final PaymentLegacyGateway payment;
+    private final QrCodeLegacyApi qr;
+    private final EmailLegacyApi email;
+    private final SupplierLegacyApi suppliers;
+    private final PricingService pricing;
+    private final EventPublisher publisher;
 
- public Ticket register(String eventId,String attendeeId,String ticketType,double basePrice){
-  Event e=events.find(eventId);
-  Attendee a=attendees.find(attendeeId);
-  if(e==null||a==null)return null;
+    public EventHubService(PaymentLegacyGateway payment, QrCodeLegacyApi qr, EmailLegacyApi email, SupplierLegacyApi suppliers, PricingService pricing, EventPublisher publisher) {
+        this.payment = payment;
+        this.qr = qr;
+        this.email = email;
+        this.suppliers = suppliers;
+        this.pricing = pricing;
+        this.publisher = publisher;
 
-  // capacity is not enforced and duplicate registration is allowed
-  e.attendeeIds.add(attendeeId);
+        publisher.subscribe(new AttendeeObserver());
+        publisher.subscribe(new OrganizerObserver());
+    }
 
-  double finalPrice=pricing.price(ticketType,basePrice);
-  String paymentResult=payment.charge(a.id,finalPrice);
+    public Ticket register(String eventId, String attendeeId, String ticketType, double basePrice) {
+        Event e = events.find(eventId);
+        Attendee a = attendees.find(attendeeId);
+        if (e == null || a == null) {
+            return null;
+        }
 
-  String ticketId="T-"+eventId+"-"+attendeeId; // duplicate id can overwrite
-  Ticket t=TicketFactory.create(ticketType,ticketId,eventId,attendeeId,finalPrice);
-  tickets.save(ticketId,t);
+        // capacity is not enforced and duplicate registration is allowed
+        e.attendeeIds.add(attendeeId);
 
-  // ticket issued even if payment fails
-  String qrCode=qr.generate(ticketId);
-  email.send(a.email,"Ingresso "+ticketId+" QR="+qrCode+" pagamento="+paymentResult);
-  publisher.publish(eventId,"REGISTRATION_CREATED");
-  return t;
- }
+        double finalPrice = pricing.price(ticketType, basePrice);
+        String paymentResult = payment.charge(a.id, finalPrice);
 
- public void hireSupplier(String eventId,String service){
-  suppliers.hire(service,eventId); // no contract/status/failure model
- }
+        String ticketId = "T-" + eventId + "-" + attendeeId; // duplicate id can overwrite
+        Ticket t = TicketFactory.create(ticketType, ticketId, eventId, attendeeId, finalPrice);
+        tickets.save(ticketId, t);
 
- public void checkIn(String ticketId){
-  Ticket t=tickets.find(ticketId); if(t==null)return;
-  t.status="USED"; // repeated check-in accepted
-  publisher.publish(t.eventId,"CHECKIN");
- }
+        // ticket issued even if payment fails
+        String qrCode = qr.generate(ticketId);
+        email.send(a.email, "Ingresso " + ticketId + " QR=" + qrCode + " pagamento=" + paymentResult);
+        publisher.publish(eventId, "REGISTRATION_CREATED");
+        return t;
+    }
 
- public void cancelEvent(String eventId){
-  Event e=events.find(eventId); if(e==null)return;
-  e.status="CANCELLED";
-  // no automatic refund or supplier cancellation
-  publisher.publish(eventId,"EVENT_CANCELLED");
- }
+    public void hireSupplier(String eventId, String service) {
+        suppliers.hire(service, eventId); // no contract/status/failure model
+    }
+
+    public void checkIn(String ticketId) {
+        Ticket t = tickets.find(ticketId);
+        if (t == null) {
+            return;
+        }
+        t.status = "USED"; // repeated check-in accepted
+        publisher.publish(t.eventId, "CHECKIN");
+    }
+
+    public void cancelEvent(String eventId) {
+        Event e = events.find(eventId);
+        if (e == null) {
+            return;
+        }
+        e.status = "CANCELLED";
+        // no automatic refund or supplier cancellation
+        publisher.publish(eventId, "EVENT_CANCELLED");
+    }
 }
