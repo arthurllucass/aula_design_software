@@ -25,18 +25,23 @@ public class Main {
         s.attendees.save("A1", new Attendee("A1", "Pessoa 1", "a1@exemplo.com"));
         s.attendees.save("A2", new Attendee("A2", "Pessoa 2", "a2@exemplo.com"));
 
+    System.out.println("CAPACIDADE=" + s.events.find("E1").capacity);
+
+    s.register("E1", "A1", "STANDARD", 100.0);
+    s.register("E1", "A2", "STANDARD", 100.0); // over capacity
+    s.register("E1", "A1", "STANDARD", 100.0); // duplicate registration
         s.register("E1", "A1", "STANDARD", 100.0);
         s.register("E1", "A2", "STANDARD", 100.0);
         s.register("E1", "A1", "STANDARD", 100.0);
 
-        s.checkIn("T-E1-A1");
-        s.checkIn("T-E1-A1");
-        s.hireSupplier("E1", "SOM");
+    s.checkIn("T-E1-A1");
+    s.checkIn("T-E1-A1"); // repeated check-in
+    s.hireSupplier("E1", "SOM");
 
-        EventHubFacade facade = new EventHubFacade(s, new PaymentAdapter(), new TicketingAdapter());
-        facade.cancel("E1");
+    EventHubFacade facade = new EventHubFacade(s, new PaymentAdapter(), new TicketingAdapter());
+    facade.cancel("E1");
 
-        System.out.println("INSCRITOS=" + facade.getService().events.find("E1").attendeeIds.size());
-        System.out.println("STATUS=" + facade.getService().events.find("E1").status);
-    }
+    System.out.println("INSCRITOS=" + facade.getService().events.find("E1").attendeeIds.size());
+    System.out.println("STATUS=" + facade.getService().events.find("E1").status);
+  }
 }

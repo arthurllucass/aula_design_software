@@ -31,7 +31,8 @@ public class EventHubService {
     private final PricingService pricing;
     private final EventPublisher publisher;
 
-    public EventHubService(PaymentLegacyGateway payment, QrCodeLegacyApi qr, EmailLegacyApi email, SupplierLegacyApi suppliers, PricingService pricing, EventPublisher publisher) {
+    public EventHubService(PaymentLegacyGateway payment, QrCodeLegacyApi qr, EmailLegacyApi email,
+            SupplierLegacyApi suppliers, PricingService pricing, EventPublisher publisher) {
         this.payment = payment;
         this.qr = qr;
         this.email = email;
@@ -46,7 +47,13 @@ public class EventHubService {
     public Ticket register(String eventId, String attendeeId, String ticketType, double basePrice) {
         Event e = events.find(eventId);
         Attendee a = attendees.find(attendeeId);
+
         if (e == null || a == null) {
+            return null;
+        }
+
+        if (tickets.all().size() >= e.capacity) {
+            notify(eventId, "REGISTRATION_FAILED - EVENT_FULL");
             return null;
         }
 
@@ -71,8 +78,13 @@ public class EventHubService {
         if (t == null) {
             return;
         }
+
+        if ("USED".equals(t.status)) { // Não aceita um ticket que já foi usado
+            notify(t.eventId, "CHECKIN_FAILED - TICKET_ALREADY_USED - TICKET_ID=" + ticketId);
+            return;
+        }
         markAsUsed(t);
-        notify(t.eventId, "CHECKIN");
+        notify(t.eventId, "CHECKIN_ACCEPTED - TICKET_ID=" + ticketId);
     }
 
     public void cancelEvent(String eventId) {
@@ -97,12 +109,13 @@ public class EventHubService {
         return payment.charge(a.id, price);
     }
 
-    private String buildTicketId(String eventId, String attendeeId) {
-        return "T-" + eventId + "-" + attendeeId;
+    // duplicate id can overwrite
+    private String buildTicketId(String eventId, String attendeeId, String ticketType) {
+        return "T-" + eventId + "-" + attendeeId + "-" + ticketType + "-" + (tickets.all().size()+1); // TicketID agora é "Unico" para cada registro, mesmo que seja do mesmo tipo e do mesmo participante, evitando sobrescrever tickets existentes.
     }
 
     private Ticket createTicket(String eventId, String attendeeId, String ticketType, double price) {
-        String ticketId = buildTicketId(eventId, attendeeId);
+        String ticketId = buildTicketId(eventId, attendeeId, ticketType);
         Ticket ticket = TicketFactory.create(ticketType, ticketId, eventId, attendeeId, price);
         tickets.save(ticketId, ticket);
         return ticket;
