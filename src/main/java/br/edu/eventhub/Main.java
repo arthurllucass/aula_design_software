@@ -28,14 +28,11 @@ public class Main {
     System.out.println("CAPACIDADE=" + s.events.find("E1").capacity);
 
     s.register("E1", "A1", "STANDARD", 100.0);
-    s.register("E1", "A2", "STANDARD", 100.0); // over capacity
-    s.register("E1", "A1", "STANDARD", 100.0); // duplicate registration
-        s.register("E1", "A1", "STANDARD", 100.0);
-        s.register("E1", "A2", "STANDARD", 100.0);
-        s.register("E1", "A1", "STANDARD", 100.0);
+    s.register("E1", "A2", "STANDARD", 100.0);
+    s.register("E1", "A1", "STANDARD", 100.0);
 
     s.checkIn("T-E1-A1");
-    s.checkIn("T-E1-A1"); // repeated check-in
+    s.checkIn("T-E1-A1");
     s.hireSupplier("E1", "SOM");
 
     EventHubFacade facade = new EventHubFacade(s, new PaymentAdapter(), new TicketingAdapter());

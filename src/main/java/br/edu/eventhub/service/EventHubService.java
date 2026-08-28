@@ -93,7 +93,7 @@ public class EventHubService {
             return;
         }
         e.status = StatusEvent.CANCELLED;
-        // no automatic refund or supplier cancellation
+
         notify(eventId, "EVENT_CANCELLED");
     }
 
@@ -109,7 +109,6 @@ public class EventHubService {
         return payment.charge(a.id, price);
     }
 
-    // duplicate id can overwrite
     private String buildTicketId(String eventId, String attendeeId, String ticketType) {
         return "T-" + eventId + "-" + attendeeId + "-" + ticketType + "-" + (tickets.all().size()+1); // TicketID agora é "Unico" para cada registro, mesmo que seja do mesmo tipo e do mesmo participante, evitando sobrescrever tickets existentes.
     }
