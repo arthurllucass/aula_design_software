@@ -241,6 +241,76 @@ ticket.status = StatusTicket.USED;
 
 ---
 
+## P04 — Validações de capacidade e de check-in no serviço
+
+### Decisão
+O `register()` passa a recusar inscrição quando o evento está cheio, o `checkIn()` passa a recusar ingresso
+já usado, e o id do ingresso deixa de se repetir.
+
+### Motivo
+Três defeitos do legado ainda estavam de pé: a capacidade do evento nunca era conferida, o mesmo ingresso
+podia passar na portaria várias vezes, e o id era montado só com evento e participante, então uma segunda
+emissão para a mesma pessoa sobrescrevia o ingresso anterior.
+
+### Antes
+O `register()` não olhava a capacidade e o `checkIn()` marcava o ingresso como usado sem perguntar nada:
+
+```java
+markAsUsed(t);
+notify(t.eventId, "CHECKIN");
+```
+
+E o id era sempre o mesmo para o mesmo par evento/participante:
+
+```java
+private String buildTicketId(String eventId, String attendeeId) {
+    return "T-" + eventId + "-" + attendeeId;
+}
+```
+
+### Depois
+No `register()`, a inscrição é recusada quando não há mais vaga:
+
+```java
+if (tickets.all().size() >= e.capacity) {
+    notify(eventId, "REGISTRATION_FAILED - EVENT_FULL");
+    return null;
+}
+```
+
+No `checkIn()`, o ingresso já usado é recusado e as notificações passam a dizer o que aconteceu:
+
+```java
+if ("USED".equals(t.status)) {
+    notify(t.eventId, "CHECKIN_FAILED - TICKET_ALREADY_USED - TICKET_ID=" + ticketId);
+    return;
+}
+markAsUsed(t);
+notify(t.eventId, "CHECKIN_ACCEPTED - TICKET_ID=" + ticketId);
+```
+
+E o id do ingresso ganhou o tipo e um contador, ficando único a cada emissão:
+
+```java
+private String buildTicketId(String eventId, String attendeeId, String ticketType) {
+    return "T-" + eventId + "-" + attendeeId + "-" + ticketType + "-" + (tickets.all().size() + 1);
+}
+```
+
+O `Main` também passou a imprimir a capacidade do evento, e o `TicketFactory` e as classes de `legacy/`
+foram reformatados.
+
+### Alternativas
+- **Deixar a regra de capacidade dentro do `Event`**, perguntando `e.temVaga()` em vez de contar ingressos
+  no serviço.
+
+### Consequências
+- Evento cheio e ingresso já usado passam a ser recusados, e a notificação diz o motivo.
+- Dois ingressos para a mesma pessoa não se sobrescrevem mais.
+- A contagem de vagas usa o total de ingressos do sistema, não os inscritos daquele evento.
+
+---
+
 ## Evidências
 
 - **Repositório:** https://github.com/arthurllucass/aula_design_software
@@ -253,6 +323,9 @@ ticket.status = StatusTicket.USED;
   - `arthur-lucas: formatacao do codigo para melhorar a leitura`
   - `arthur-lucas: cria os enums de status e usa no Event, no Ticket e no service`
   - `arthur-lucas: cria o pacote de test com uma copia das classes`
+  - `arthur-lucas: documenta o P03 e acrescenta o print do mvn test`
+  - `wb-branch-aula-04: refatora código para melhorar a legibilidade e a formatação em várias classes`
+  - `wb-branch-aula-04: TICKET:`
 - **Arquivos:**
   - `src/main/java/br/edu/eventhub/service/EventHubService.java`
   - `src/main/java/br/edu/eventhub/Main.java`
